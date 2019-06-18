@@ -19,6 +19,8 @@ class Firebase {
     this.auth = app.auth();
   }
 
+  doOnAuthStateChanged = onChange => this.auth.onAuthStateChanged(onChange);
+
   // *** Auth API ***
 
   doCreateUserWithEmailAndPassword = (email, password) =>
@@ -42,18 +44,6 @@ class Firebase {
    */
 
   firestore = () => app.firestore();
-
-  getGames = () => app.firestore().collection('/games');
-
-  getGame = uid => app.firestore().doc(`/games/${uid}`);
-
-  getLocations = () => app.firestore().collection('/locations');
-
-  getLocation = uid => app.firestore().doc(`/locations/${uid}`);
-
-  getUsers = () => app.firestore().collection('/users');
-
-  getUser = uid => app.firestore().doc(`/users/${uid}`);
 }
 
 export default Firebase;

@@ -5,7 +5,6 @@ import Typography from '@material-ui/core/Typography';
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Drawer from '@material-ui/core/Drawer';
-import { useSelector } from 'react-redux';
 
 import IconButton from '@material-ui/core/IconButton';
 import { makeStyles } from '@material-ui/core/styles';
@@ -15,11 +14,16 @@ import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Link from '@material-ui/core/Link';
 
 import AppBar from '@material-ui/core/AppBar';
+import { useFirebase } from '../firebase';
 
 const useStyles = makeStyles(theme => ({
+  root: {
+    flexGrow: 1,
+  },
   menuButton: {
     marginRight: theme.spacing(2),
   },
@@ -36,11 +40,25 @@ const useStyles = makeStyles(theme => ({
     top: 'auto',
     bottom: 0,
   },
+  error: {
+    textAlign: 'center',
+    backgroundColor: 'darkred',
+    color: 'white',
+  },
 }));
 
-function Header({ title, rightBarButton, hideMenu, backButton, history }) {
+function Header({
+  title,
+  rightBarButton,
+  hideMenu,
+  backButton,
+  history,
+  loading,
+  error,
+}) {
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const classes = useStyles();
+  const firebase = useFirebase();
 
   const navigationList = [
     {
@@ -60,14 +78,17 @@ function Header({ title, rightBarButton, hideMenu, backButton, history }) {
     },
   ];
 
-  const signOut = () => {};
+  const signOut = () => {
+    firebase.doSignOut();
+    history.push('sign-in');
+  };
   const goBack = () => {
     history.goBack();
     setSideMenuVisible(false);
   };
 
   return (
-    <div>
+    <div className={classes.root}>
       <AppBar position="static">
         <Toolbar>
           {!hideMenu && (
@@ -138,6 +159,14 @@ function Header({ title, rightBarButton, hideMenu, backButton, history }) {
           </AppBar>
         </div>
       </Drawer>
+      {loading && (
+        <LinearProgress style={{ position: 'absolute', width: '100vw' }} />
+      )}
+      {error && (
+        <Typography className={classes.error}>
+          Error: {error.message}
+        </Typography>
+      )}
     </div>
   );
 }
@@ -147,7 +176,9 @@ Header.propTypes = {
   rightBarButton: PropTypes.element,
   hideMenu: PropTypes.bool,
   backButton: PropTypes.bool,
-  history: PropTypes.object,
+  history: PropTypes.object.isRequired,
+  loading: PropTypes.bool,
+  error: PropTypes.object,
 };
 
 export default Header;

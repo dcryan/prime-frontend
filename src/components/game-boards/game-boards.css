@@ -1,0 +1,24 @@
+.game-boards .progress-bar {
+  position: absolute;
+  width: 100vw;  
+}
+
+.game-boards .error {
+  text-align: center;
+  background-color: darkred;
+  color: white;
+}
+
+.game-boards .page-break {
+  page-break-after: always;
+}
+
+.game-boards .game-board-container {
+  padding: 5mm;
+  height: 50vh;
+  page-break-inside: avoid;
+}
+
+.game-boards .dashed-line {
+  border-top: dashed;
+}

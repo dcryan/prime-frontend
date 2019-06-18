@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropType from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -12,7 +12,7 @@ import {
 } from '@material-ui/core';
 import { KeyboardTimePicker, KeyboardDatePicker } from '@material-ui/pickers';
 import Header from './header';
-import { useFirebase } from '../auth';
+import { useFirebase } from '../firebase';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -27,25 +27,10 @@ const useStyles = makeStyles(theme => ({
   submitButton: {
     margin: theme.spacing(1),
   },
-  formControl: {
-    margin: theme.spacing(1),
-    minWidth: 120,
-  },
   selectEmpty: {
     marginTop: theme.spacing(2),
   },
 }));
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
 
 const locations = ["Henry's", 'Ironwood Social', 'Spitfire'];
 const genreCategories = ['oldies', "60's", "70's", "80's", "90's"];
@@ -54,13 +39,21 @@ export default function CreateGame({ history }) {
   const firebase = useFirebase();
 
   const classes = useStyles();
-  const [values, setValues] = React.useState({
+  const [values, setValues] = useState({
     name: '',
     dateTime: new Date(),
     locationId: '',
     cardCount: 50,
     genres: [],
   });
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const validInputs =
+    values.name !== '' &&
+    values.dateTime !== null &&
+    values.locationId !== '' &&
+    values.cardCount > 0 &&
+    values.genres.length > 0;
 
   const handleChange = name => event => {
     setValues({ ...values, [name]: event.target.value });
@@ -70,14 +63,34 @@ export default function CreateGame({ history }) {
     setValues({ ...values, dateTime });
   };
 
-  const onSubmit = () => {
+  const onSubmit = async e => {
+    e.preventDefault();
+
     const gamesRef = firebase.firestore().collection('games');
-    gamesRef.add(values);
+    try {
+      setLoading(true);
+      await gamesRef.add(values);
+      // successful
+
+      history.goBack();
+    } catch (error) {
+      console.error(error);
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div>
-      <Header title="Create Game" hideMenu backButton history={history} />
+      <Header
+        title="Create Game"
+        hideMenu
+        backButton
+        loading={loading}
+        error={error}
+        history={history}
+      />
       <form
         className={classes.container}
         noValidate
@@ -114,12 +127,14 @@ export default function CreateGame({ history }) {
           }}
         />
         <FormControl className={classes.textField}>
-          <InputLabel htmlFor="select-multiple">Locations</InputLabel>
+          <InputLabel htmlFor="location">Locations</InputLabel>
           <Select
             value={values.locationId}
             onChange={handleChange('locationId')}
-            input={<Input id="select-multiple" />}
-            MenuProps={MenuProps}
+            inputProps={{
+              name: 'location',
+              id: 'location',
+            }}
           >
             {locations.map(location => (
               <MenuItem key={location} value={location}>
@@ -137,13 +152,16 @@ export default function CreateGame({ history }) {
           margin="normal"
         />
         <FormControl className={classes.textField}>
-          <InputLabel htmlFor="select-multiple">Genres</InputLabel>
+          <InputLabel htmlFor="genres">Genres</InputLabel>
           <Select
             multiple
             value={values.genres}
             onChange={handleChange('genres')}
+            inputProps={{
+              name: 'genres',
+              id: 'genres',
+            }}
             input={<Input id="select-multiple" />}
-            MenuProps={MenuProps}
           >
             {genreCategories.map(category => (
               <MenuItem key={category} value={category}>
@@ -157,6 +175,7 @@ export default function CreateGame({ history }) {
           color="primary"
           type="submit"
           className={classes.submitButton}
+          disabled={!validInputs}
         >
           Create
         </Button>

@@ -5,8 +5,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import Link from '@material-ui/core/Link';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { ACTIONS } from '../store/auth';
-import { withFirebase } from '../auth';
+import { useFirebase } from '../firebase';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -37,10 +36,11 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function SignIn({ history, firebase }) {
+function SignIn({ history }) {
+  const firebase = useFirebase();
   const classes = useStyles();
   const [values, setValues] = useState({
-    email: 'daniel.c.ryan@icloud.com',
+    email: 'daniel@test.com',
     password: 'test123',
     error: null,
   });
@@ -133,7 +133,6 @@ function SignIn({ history, firebase }) {
 
 SignIn.propTypes = {
   history: PropTypes.object,
-  firebase: PropTypes.object,
 };
 
 const mapStateToProps = ({ auth }) => ({ auth });
@@ -142,4 +141,4 @@ const mapDispatchToProps = dispatch => ({});
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(withFirebase(SignIn));
+)(SignIn);

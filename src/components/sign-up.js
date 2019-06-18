@@ -4,8 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import PropTypes from 'prop-types';
 import { Link as RouterLink } from 'react-router-dom';
 import Link from '@material-ui/core/Link';
-import { connect } from 'react-redux';
-import { withFirebase } from '../auth';
+import { useFirebase } from '../firebase';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -36,15 +35,23 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function SignUp({ history, firebase }) {
+function SignUp({ history }) {
+  const firebase = useFirebase();
   const classes = useStyles();
   const [values, setValues] = useState({
-    email: 'daniel.c.ryan@icloud.com',
+    email: 'daniel@test.com',
     password: 'test123',
     firstName: 'Daniel',
     lastName: 'Ryan',
+    teamName: '',
     error: null,
   });
+
+  const validInputs =
+    values.email !== '' &&
+    values.password !== '' &&
+    values.firstName !== '' &&
+    values.lastName !== '';
 
   const handleChange = name => event => {
     setValues({ ...values, [name]: event.target.value });
@@ -59,7 +66,23 @@ function SignUp({ history, firebase }) {
         values.password
       );
 
-      history.go('/games');
+      const teamRef = firebase.firestore().collection('team');
+      const teamMetaData = await teamRef.add({
+        name: values.teamName,
+      });
+
+      const usersRef = firebase
+        .firestore()
+        .collection('users')
+        .doc(firebase.currentUser().uid);
+      await usersRef.set({
+        email: values.email,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        teamId: teamMetaData.id,
+      });
+
+      history.push('/games');
     } catch (error) {
       setValues({ ...values, error });
     }
@@ -99,6 +122,16 @@ function SignUp({ history, firebase }) {
           />
 
           <TextField
+            id="team-name"
+            label="Team Name (optional)"
+            className={classes.textField}
+            value={values.teamName}
+            onChange={handleChange('teamName')}
+            margin="normal"
+            variant="outlined"
+          />
+
+          <TextField
             id="email"
             label="Email"
             className={classes.textField}
@@ -122,6 +155,7 @@ function SignUp({ history, firebase }) {
             color="primary"
             type="submit"
             className={classes.submitButton}
+            disabled={!validInputs}
           >
             Create Account
           </Button>
@@ -145,12 +179,6 @@ function SignUp({ history, firebase }) {
 
 SignUp.propTypes = {
   history: PropTypes.object,
-  firebase: PropTypes.object,
 };
-const mapStateToProps = ({ auth }) => ({ auth });
-const mapDispatchToProps = dispatch => ({});
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(withFirebase(SignUp));
+export default SignUp;

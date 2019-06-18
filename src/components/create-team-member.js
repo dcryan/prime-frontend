@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { TextField, Button } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import PropTypes from 'prop-types';
 import Header from './header';
 import { useFirebase } from '../firebase';
 
@@ -10,38 +10,28 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     flexDirection: 'column',
     flexWrap: 'wrap',
-  },
-  textField: {
-    marginLeft: theme.spacing(1),
-    marginRight: theme.spacing(1),
-  },
-  submitButton: {
     margin: theme.spacing(1),
   },
+  textField: {},
+  submitButton: {
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+  },
 }));
-function CreateLocation({ history }) {
-  // State
+
+function CreateTeamMember({ history }) {
+  const firebase = useFirebase();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [values, setValues] = useState({
-    name: '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
+
+  const classes = useStyles();
+  const [values, setValues] = React.useState({
+    firstName: 'test',
+    lastName: 'test',
+    email: 'test@test.com',
+    password: 'test123',
   });
 
-  const firebase = useFirebase();
-  const classes = useStyles();
-
-  const validInputs =
-    values.name !== '' &&
-    values.address !== '' &&
-    values.city !== '' &&
-    values.state !== '' &&
-    values.zip !== '';
-
-  // Helpers
   const handleChange = name => event => {
     setValues({ ...values, [name]: event.target.value });
   };
@@ -49,10 +39,32 @@ function CreateLocation({ history }) {
   const onSubmit = async e => {
     e.preventDefault();
 
-    const locationsRef = firebase.firestore().collection('locations');
+    const currentUser = await firebase
+      .firestore()
+      .collection('users')
+      .doc(firebase.currentUser().uid)
+      .get();
+
     try {
       setLoading(true);
-      await locationsRef.add(values);
+      const newUser = await firebase.doCreateUserWithEmailAndPassword(
+        values.email,
+        values.password
+      );
+
+      const newUserRef = firebase
+        .firestore()
+        .collection('users')
+        .doc(newUser.user.uid);
+      await newUserRef.set({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+
+        // pull the same team as the current user.
+        teamId: currentUser.data().teamId,
+      });
+
       // successful
 
       history.goBack();
@@ -67,7 +79,7 @@ function CreateLocation({ history }) {
   return (
     <div>
       <Header
-        title="Create Location"
+        title="Create Team Member"
         hideMenu
         backButton
         loading={loading}
@@ -81,38 +93,31 @@ function CreateLocation({ history }) {
         onSubmit={onSubmit}
       >
         <TextField
-          label="Name"
+          label="First Name"
           className={classes.textField}
           value={values.name}
-          onChange={handleChange('name')}
+          onChange={handleChange('firstName')}
           margin="normal"
         />
         <TextField
-          label="Address"
+          label="Last Name"
           className={classes.textField}
-          value={values.address}
-          onChange={handleChange('address')}
+          value={values.name}
+          onChange={handleChange('lastName')}
           margin="normal"
         />
         <TextField
-          label="City"
+          label="email"
           className={classes.textField}
-          value={values.city}
-          onChange={handleChange('city')}
+          value={values.name}
+          onChange={handleChange('email')}
           margin="normal"
         />
         <TextField
-          label="State"
+          label="Password"
           className={classes.textField}
-          value={values.state}
-          onChange={handleChange('state')}
-          margin="normal"
-        />
-        <TextField
-          label="Zip"
-          className={classes.textField}
-          value={values.zip}
-          onChange={handleChange('zip')}
+          value={values.name}
+          onChange={handleChange('password')}
           margin="normal"
         />
         <Button
@@ -120,17 +125,16 @@ function CreateLocation({ history }) {
           color="primary"
           type="submit"
           className={classes.submitButton}
-          disabled={!validInputs}
         >
-          Create
+          Create Team
         </Button>
       </form>
     </div>
   );
 }
 
-CreateLocation.propTypes = {
+CreateTeamMember.propTypes = {
   history: PropTypes.object,
 };
 
-export default CreateLocation;
+export default CreateTeamMember;

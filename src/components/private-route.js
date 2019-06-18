@@ -1,12 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Route, Redirect } from 'react-router-dom';
-import { useFirebase } from '../auth';
+import { useUser } from '../session';
 
 function PrivateRoute({ component: Component, ...rest }) {
-  const firebase = useFirebase();
-  // const authenticated = firebase.isLoggedIn();
-  const authenticated = true;
+  const currentUser = useUser();
+  const authenticated = currentUser.user !== null;
 
   return (
     <Route

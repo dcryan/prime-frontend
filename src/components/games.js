@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -8,62 +8,89 @@ import Link from '@material-ui/core/Link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import IconButton from '@material-ui/core/IconButton';
 import { Typography } from '@material-ui/core';
+import PropTypes from 'prop-types';
 import Header from './header';
-import { useCollection } from '../hooks/firebase';
+import { useCollectionWithQuery } from '../hooks/firebase';
+import Layout from './layout';
+import { useFirebase } from '../firebase';
+import { useUser } from '../session';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles(() => ({
   root: {
     width: '100%',
-    maxWidth: 360,
   },
   text: {
     textAlign: 'center',
   },
 }));
 
-export default function Games() {
+export default function Games({ history }) {
   const classes = useStyles();
-  const { error, loading, collection: games } = useCollection('games');
+  const firebase = useFirebase();
+  const currentUser = useUser();
+  const query = useMemo(
+    () =>
+      firebase
+        .firestore()
+        .collection('games')
+        .where('teamId', '==', currentUser.user.teamId),
+    [firebase, currentUser.user.teamId]
+  );
+
+  const { error, loading, collection: games } = useCollectionWithQuery(query);
+
+  console.log(games);
+
+  const goToGame = gameId => {
+    history.push(`games/${gameId}`);
+  };
 
   return (
     <div>
       <Header
         title="Games"
+        loading={loading}
+        error={error}
+        history={history}
         rightBarButton={
           <Link color="inherit" component={RouterLink} to="/games/create">
-            <IconButton
-              edge="start"
-              className={classes.menuButton}
-              color="inherit"
-              aria-label="Menu"
-            >
+            <IconButton edge="start" color="inherit" aria-label="Menu">
               <FontAwesomeIcon icon="plus" />
             </IconButton>
           </Link>
         }
       />
 
-      {error && (
-        <Typography className={classes.text}>Error Occurred</Typography>
-      )}
+      <Layout>
+        {games && games.length === 0 && (
+          <Typography className={classes.text}>No Games</Typography>
+        )}
 
-      {loading && <Typography className={classes.text}>Loading...</Typography>}
-
-      {!loading && games && games.length === 0 && (
-        <Typography className={classes.text}>No Games</Typography>
-      )}
-
-      <List className={classes.root}>
-        {games &&
-          games.map(game => (
-            <ListItem>
-              <ListItemText
-                primary={game.name}
-                secondary={game.location.name}
-              />
-            </ListItem>
-          ))}
-      </List>
+        <List className={classes.root}>
+          {games &&
+            games.map(gameMetaData => {
+              const game = gameMetaData.data();
+              debugger;
+              const gameId = gameMetaData.id;
+              return (
+                <ListItem
+                  key={game.name}
+                  button
+                  onClick={() => goToGame(gameId)}
+                >
+                  <ListItemText
+                    primary={game.name}
+                    secondary={game.locationId}
+                  />
+                </ListItem>
+              );
+            })}
+        </List>
+      </Layout>
     </div>
   );
 }
+
+Games.propTypes = {
+  history: PropTypes.object,
+};

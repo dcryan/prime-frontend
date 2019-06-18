@@ -1,0 +1,45 @@
+
+.bold {
+  font-weight: bold;
+}
+
+table.game-board {
+  height: 100%;
+  width: 100%;
+  border-collapse: collapse;
+  background-image: url(../../images/watermark.png);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  -webkit-print-color-adjust: exact;
+}
+
+table.game-board thead {
+  background-color: #ddd;
+}
+
+table.game-board th {
+  border: 1px solid black;
+  padding: 14px 16px;
+}
+
+table.game-board td {
+  text-align: center;
+  border: 1px solid black;
+  padding: 14px 16px;
+}
+
+table.game-board tr.copyright-row {
+  height: 1cm;
+  font-size: .8em;
+}
+
+/*** Printing Game Boards ***/
+/* Remove Header & Footer when printing */
+@page { size: auto;  margin: 0mm; }
+
+/* Renders background colors and images for print */
+* {
+  color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
